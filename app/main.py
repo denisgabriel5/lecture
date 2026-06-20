@@ -121,4 +121,22 @@ async def stream_audio(job_id: str) -> FileResponse:
 # Frontend (must be last)
 # ---------------------------------------------------------------------------
 
-app.mount("/", StaticFiles(directory="/app/app/static", html=True), name="static")
+_STATIC_DIR = "/app/app/static"
+_NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
+
+@app.get("/sw.js")
+async def service_worker() -> FileResponse:
+    # Never let the service worker script itself be HTTP-cached, otherwise
+    # clients (especially iOS Safari) won't notice new versions.
+    return FileResponse(f"{_STATIC_DIR}/sw.js", media_type="application/javascript",
+                        headers=_NO_CACHE)
+
+
+@app.get("/")
+async def index() -> FileResponse:
+    return FileResponse(f"{_STATIC_DIR}/index.html", media_type="text/html",
+                        headers=_NO_CACHE)
+
+
+app.mount("/", StaticFiles(directory=_STATIC_DIR, html=True), name="static")

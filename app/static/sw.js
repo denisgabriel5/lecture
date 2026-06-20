@@ -1,5 +1,6 @@
-// Service worker: cache-first for the app shell, network-only for the API.
-const CACHE = "lecture-v4";
+// Service worker: network-first for the shell (always fresh when online),
+// cache as offline fallback. API/audio is network-only.
+const CACHE = "lecture-v5";
 const SHELL = [
   "/",
   "/app.js",
@@ -27,6 +28,7 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
+  if (e.request.method !== "GET") return;
 
   // API and audio streaming: always network, graceful offline error
   if (url.pathname.startsWith("/api/")) {
@@ -41,8 +43,17 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // App shell: cache-first
+  // Everything else: network-first. Refresh the cached copy on every successful
+  // load; fall back to cache only when the network is unavailable (offline).
   e.respondWith(
-    caches.match(e.request).then((cached) => cached ?? fetch(e.request))
+    fetch(e.request)
+      .then((resp) => {
+        if (resp.ok && resp.type === "basic") {
+          const copy = resp.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        }
+        return resp;
+      })
+      .catch(() => caches.match(e.request))
   );
 });

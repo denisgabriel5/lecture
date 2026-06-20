@@ -125,7 +125,16 @@
   <script src="/app.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js");
+      // updateViaCache:"none" forces the browser to revalidate sw.js every time,
+      // so new versions are picked up instead of being stuck behind HTTP cache.
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
+      // When a new worker takes control, reload once to swap in fresh assets.
+      let reloading = false;
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (reloading) return;
+        reloading = true;
+        location.reload();
+      });
     }
   </script>
 </body>
