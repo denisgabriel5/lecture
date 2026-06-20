@@ -1,0 +1,9 @@
+.git
+.github
+.gitignore
+.dockerignore
+README.md
+**/__pycache__
+*.pyc
+app/static/icons
+data

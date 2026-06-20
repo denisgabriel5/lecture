@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+# Generated at build time by app/make_icons.py
+app/static/icons/
+# Local runtime data
+data/
