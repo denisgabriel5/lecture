@@ -127,8 +127,8 @@ _NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
 @app.get("/sw.js")
 async def service_worker() -> FileResponse:
-    # Never let the service worker script itself be HTTP-cached, otherwise
-    # clients (especially iOS Safari) won't notice new versions.
+    # Never let the service worker script itself be HTTP-cached (by the browser
+    # or by Cloudflare), otherwise clients won't notice new versions.
     return FileResponse(f"{_STATIC_DIR}/sw.js", media_type="application/javascript",
                         headers=_NO_CACHE)
 
@@ -136,6 +136,26 @@ async def service_worker() -> FileResponse:
 @app.get("/")
 async def index() -> FileResponse:
     return FileResponse(f"{_STATIC_DIR}/index.html", media_type="text/html",
+                        headers=_NO_CACHE)
+
+
+# Shell assets are referenced with a ?v= cache-buster from index.html, but we
+# also send no-store so the CDN edge never holds a stale copy of these paths.
+@app.get("/app.js")
+async def app_js() -> FileResponse:
+    return FileResponse(f"{_STATIC_DIR}/app.js", media_type="application/javascript",
+                        headers=_NO_CACHE)
+
+
+@app.get("/style.css")
+async def style_css() -> FileResponse:
+    return FileResponse(f"{_STATIC_DIR}/style.css", media_type="text/css",
+                        headers=_NO_CACHE)
+
+
+@app.get("/manifest.json")
+async def manifest_json() -> FileResponse:
+    return FileResponse(f"{_STATIC_DIR}/manifest.json", media_type="application/manifest+json",
                         headers=_NO_CACHE)
 
 

@@ -3,9 +3,9 @@
 const CACHE = "lecture-v5";
 const SHELL = [
   "/",
-  "/app.js",
-  "/style.css",
-  "/manifest.json",
+  "/app.js?v=5",
+  "/style.css?v=5",
+  "/manifest.json?v=5",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
