@@ -55,6 +55,22 @@ class TTSError(RuntimeError):
     pass
 
 
+def _friendly_error(code: int | None) -> str:
+    """Turn an HTTP status into a short, human-readable failure message."""
+    if code == 429:
+        return ("Voice quota reached — the Gemini free tier is used up. "
+                "It resets daily; try again later, or switch to a paid API key.")
+    if code in (401, 403):
+        return "Voice service rejected the API key. Check GEMINI_API_KEY."
+    if code == 400:
+        return "The voice service couldn't process this text."
+    if code and code >= 500:
+        return "The voice service is temporarily unavailable. Please try again shortly."
+    if code:
+        return f"Voice service error (HTTP {code}). Please try again."
+    return "Couldn't reach the voice service. Check the server's connection and retry."
+
+
 def _request(text: str, voice: str) -> tuple[bytes, int]:
     """One synthesis call → (pcm_bytes, sample_rate). Retries transient failures."""
     if not _API_KEY:
@@ -72,7 +88,8 @@ def _request(text: str, voice: str) -> tuple[bytes, int]:
     }).encode()
     url = _ENDPOINT.format(model=MODEL, key=_API_KEY)
 
-    last_err = None
+    last_code: int | None = None
+    last_log = None
     for attempt in range(_MAX_RETRIES):
         try:
             req = urllib.request.Request(url, data=body,
@@ -90,19 +107,20 @@ def _request(text: str, voice: str) -> tuple[bytes, int]:
                 raise TTSError("empty audio returned")
             return pcm, rate
         except urllib.error.HTTPError as e:
-            detail = e.read().decode(errors="replace")[:300]
-            last_err = f"HTTP {e.code}: {detail}"
-            # 429 (rate limit) and 5xx are retryable; 4xx others are not
+            last_code = e.code
+            last_log = f"HTTP {e.code}: {e.read().decode(errors='replace')[:300]}"
+            # 429 (rate limit) and 5xx are retryable; other 4xx are not
             if e.code != 429 and e.code < 500:
-                raise TTSError(last_err) from e
+                raise TTSError(_friendly_error(e.code)) from e
         except (urllib.error.URLError, TimeoutError, KeyError, ValueError) as e:
-            last_err = str(e)
+            last_log = str(e)
         wait = min(2 ** attempt, 30)
         logger.warning("TTS attempt %d/%d failed (%s); retrying in %ds",
-                       attempt + 1, _MAX_RETRIES, last_err, wait)
+                       attempt + 1, _MAX_RETRIES, last_log, wait)
         time.sleep(wait)
 
-    raise TTSError(f"synthesis failed after {_MAX_RETRIES} attempts: {last_err}")
+    # Exhausted retries — surface a clean message (raw detail stayed in the logs).
+    raise TTSError(_friendly_error(last_code))
 
 
 def synthesize(text: str, output_path: str, voice: str, language: str = "ro") -> None:

@@ -1,11 +1,11 @@
 // Service worker: network-first for the shell (always fresh when online),
 // cache as offline fallback. API/audio is network-only.
-const CACHE = "lecture-v5";
+const CACHE = "lecture-v6";
 const SHELL = [
   "/",
-  "/app.js?v=5",
-  "/style.css?v=5",
-  "/manifest.json?v=5",
+  "/app.js?v=6",
+  "/style.css?v=6",
+  "/manifest.json?v=6",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",

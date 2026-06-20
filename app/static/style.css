@@ -332,13 +332,19 @@ body {
 }
 
 .job-error {
-  font-size: .78rem;
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  font-size: .82rem;
+  line-height: 1.45;
   color: var(--danger);
-  padding: .5rem .75rem;
+  padding: .65rem .8rem;
   background: color-mix(in srgb, var(--danger) 12%, transparent);
   border-radius: var(--radius-s);
   word-break: break-word;
 }
+.job-error svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: .08rem; }
+.job-error span { flex: 1; }
 
 /* Audio player */
 .audio-section { display: flex; flex-direction: column; gap: .65rem; }
